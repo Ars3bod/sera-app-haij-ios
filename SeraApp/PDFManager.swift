@@ -10,10 +10,10 @@ class PDFManager: ObservableObject {
     @Published var isProcessing = false
     
     // تحميل قالب PDF من المشروع
-    func loadPDFTemplate() -> PDFDocument? {
-        guard let url = Bundle.main.url(forResource: "template_with_placeholder", withExtension: "pdf"),
+    func loadPDFTemplate(templateType: TemplateType = .withoutLogos) -> PDFDocument? {
+        guard let url = Bundle.main.url(forResource: templateType.rawValue, withExtension: "pdf"),
               let pdfDocument = PDFDocument(url: url) else {
-            errorMessage = "لم يتم العثور على قالب PDF"
+            errorMessage = "لم يتم العثور على قالب PDF: \(templateType.rawValue)"
             return nil
         }
         return pdfDocument
@@ -96,39 +96,53 @@ class PDFManager: ObservableObject {
         let secondLastPageBounds = secondLastPage.bounds(for: .mediaBox)
         let lastPageBounds = lastPage.bounds(for: .mediaBox)
         
-        // حساب أبعاد الصور (أكبر لتحسين الوضوح)
-        let imageWidth: CGFloat = 300   // زيادة من 200 إلى 340
-        let imageHeight: CGFloat = 300  // زيادة من 200 إلى 340
-        let spaceBetweenImages: CGFloat = 15 // تقليل المسافة من 20 إلى 10
+        // حساب أبعاد الصور مع المساحة الآمنة
+        let imageWidth: CGFloat = 340   // الحجم المطلوب
+        let imageHeight: CGFloat = 340  // الحجم المطلوب
+        let spaceBetweenImages: CGFloat = 10
         
-        // حساب المواضع للصفحة الثانية من الآخر (الصفحة قبل الأخيرة)
-        let leftX_page2 = (secondLastPageBounds.width - (2 * imageWidth + spaceBetweenImages)) / 2
-        let rightX_page2 = leftX_page2 + imageWidth + spaceBetweenImages
+        // إضافة مساحة آمنة من الجوانب
+        let safeAreaLeft: CGFloat = 40   // مساحة آمنة من اليسار
+        let safeAreaRight: CGFloat = 40  // مساحة آمنة من اليمين
+        
+        // حساب أبعاد الصور المعدلة للصفحة الثانية من الآخر
+        let availableWidth_page2 = secondLastPageBounds.width - safeAreaLeft - safeAreaRight
+        let adjustedImageWidth_page2 = min(imageWidth, (availableWidth_page2 - spaceBetweenImages) / 2)
+        let adjustedImageHeight_page2 = min(imageHeight, adjustedImageWidth_page2) // للحفاظ على النسبة
+        
+        // حساب المواضع للصفحة الثانية من الآخر
+        let leftX_page2 = safeAreaLeft + (availableWidth_page2 - (2 * adjustedImageWidth_page2 + spaceBetweenImages)) / 2
+        let rightX_page2 = leftX_page2 + adjustedImageWidth_page2 + spaceBetweenImages
         
         let centerY_page2 = secondLastPageBounds.height * 0.5
-        let topY_page2 = centerY_page2 + (imageHeight / 2) + (spaceBetweenImages / 2)
-        let bottomY_page2 = centerY_page2 - (imageHeight / 2) - (spaceBetweenImages / 2)
+        let topY_page2 = centerY_page2 + (adjustedImageHeight_page2 / 2) + (spaceBetweenImages / 2)
+        let bottomY_page2 = centerY_page2 - (adjustedImageHeight_page2 / 2) - (spaceBetweenImages / 2)
+        
+        // حساب أبعاد الصور المعدلة للصفحة الأخيرة
+        let availableWidth_page3 = lastPageBounds.width - safeAreaLeft - safeAreaRight
+        let adjustedImageWidth_page3 = min(imageWidth, (availableWidth_page3 - spaceBetweenImages) / 2)
+        let adjustedImageHeight_page3 = min(imageHeight, adjustedImageWidth_page3) // للحفاظ على النسبة
         
         // حساب المواضع للصفحة الأخيرة
-        let leftX_page3 = (lastPageBounds.width - (2 * imageWidth + spaceBetweenImages)) / 2
-        let rightX_page3 = leftX_page3 + imageWidth + spaceBetweenImages
+        let leftX_page3 = safeAreaLeft + (availableWidth_page3 - (2 * adjustedImageWidth_page3 + spaceBetweenImages)) / 2
+        let rightX_page3 = leftX_page3 + adjustedImageWidth_page3 + spaceBetweenImages
         
         let centerY_page3 = lastPageBounds.height * 0.5
-        let topY_page3 = centerY_page3 + (imageHeight / 2) + (spaceBetweenImages / 2)
-        let bottomY_page3 = centerY_page3 - (imageHeight / 2) - (spaceBetweenImages / 2)
+        let topY_page3 = centerY_page3 + (adjustedImageHeight_page3 / 2) + (spaceBetweenImages / 2)
+        let bottomY_page3 = centerY_page3 - (adjustedImageHeight_page3 / 2) - (spaceBetweenImages / 2)
         
         return [
             // الصفحة قبل الأخيرة - 4 صور
-            (secondLastPageIndex, CGRect(x: leftX_page2, y: topY_page2, width: imageWidth, height: imageHeight)),      // أعلى يسار
-            (secondLastPageIndex, CGRect(x: rightX_page2, y: topY_page2, width: imageWidth, height: imageHeight)),     // أعلى يمين
-            (secondLastPageIndex, CGRect(x: leftX_page2, y: bottomY_page2, width: imageWidth, height: imageHeight)),   // أسفل يسار
-            (secondLastPageIndex, CGRect(x: rightX_page2, y: bottomY_page2, width: imageWidth, height: imageHeight)),  // أسفل يمين
+            (secondLastPageIndex, CGRect(x: leftX_page2, y: topY_page2, width: adjustedImageWidth_page2, height: adjustedImageHeight_page2)),      // أعلى يسار
+            (secondLastPageIndex, CGRect(x: rightX_page2, y: topY_page2, width: adjustedImageWidth_page2, height: adjustedImageHeight_page2)),     // أعلى يمين
+            (secondLastPageIndex, CGRect(x: leftX_page2, y: bottomY_page2, width: adjustedImageWidth_page2, height: adjustedImageHeight_page2)),   // أسفل يسار
+            (secondLastPageIndex, CGRect(x: rightX_page2, y: bottomY_page2, width: adjustedImageWidth_page2, height: adjustedImageHeight_page2)),  // أسفل يمين
             
             // الصفحة الأخيرة - 4 صور
-            (lastPageIndex, CGRect(x: leftX_page3, y: topY_page3, width: imageWidth, height: imageHeight)),      // أعلى يسار
-            (lastPageIndex, CGRect(x: rightX_page3, y: topY_page3, width: imageWidth, height: imageHeight)),     // أعلى يمين
-            (lastPageIndex, CGRect(x: leftX_page3, y: bottomY_page3, width: imageWidth, height: imageHeight)),   // أسفل يسار
-            (lastPageIndex, CGRect(x: rightX_page3, y: bottomY_page3, width: imageWidth, height: imageHeight))   // أسفل يمين
+            (lastPageIndex, CGRect(x: leftX_page3, y: topY_page3, width: adjustedImageWidth_page3, height: adjustedImageHeight_page3)),      // أعلى يسار
+            (lastPageIndex, CGRect(x: rightX_page3, y: topY_page3, width: adjustedImageWidth_page3, height: adjustedImageHeight_page3)),     // أعلى يمين
+            (lastPageIndex, CGRect(x: leftX_page3, y: bottomY_page3, width: adjustedImageWidth_page3, height: adjustedImageHeight_page3)),   // أسفل يسار
+            (lastPageIndex, CGRect(x: rightX_page3, y: bottomY_page3, width: adjustedImageWidth_page3, height: adjustedImageHeight_page3))   // أسفل يمين
         ]
     }
     
@@ -319,18 +333,37 @@ class PDFManager: ObservableObject {
         let imageHeight: CGFloat = 340  // زيادة من 200 إلى 340
         let spaceBetweenImages: CGFloat = 10 // تقليل المسافة من 20 إلى 10
         
-        // حساب المواضع في شبكة 2×2 - أكثر توسطاً في الصفحة
+        // إضافة مساحة آمنة من الجوانب
+        let safeAreaLeft: CGFloat = 40   // مساحة آمنة من اليسار
+        let safeAreaRight: CGFloat = 40  // مساحة آمنة من اليمين
+        let safeAreaTop: CGFloat = 30    // مساحة آمنة من الأعلى
+        let safeAreaBottom: CGFloat = 30 // مساحة آمنة من الأسفل
+        
+        // حساب العرض المتاح للصور بعد خصم المساحات الآمنة
+        let availableWidth = pageRect.width - safeAreaLeft - safeAreaRight
+        let availableHeight = pageRect.height - safeAreaTop - safeAreaBottom
+        
+        // التأكد من أن الصور تناسب المساحة المتاحة
+        let adjustedImageWidth = min(imageWidth, (availableWidth - spaceBetweenImages) / 2)
+        let adjustedImageHeight = min(imageHeight, (availableHeight - spaceBetweenImages) / 2)
+        
+        // حساب المواضع في شبكة 2×2 مع المساحة الآمنة
         let centerY = pageRect.height * 0.5  // وضع الصور في المنتصف (50%)
-        let leftX = (pageRect.width - (2 * imageWidth + spaceBetweenImages)) / 2
-        let rightX = leftX + imageWidth + spaceBetweenImages
-        let topY = centerY + (imageHeight / 2) + (spaceBetweenImages / 2)
-        let bottomY = centerY - (imageHeight / 2) - (spaceBetweenImages / 2)
+        let leftX = safeAreaLeft + (availableWidth - (2 * adjustedImageWidth + spaceBetweenImages)) / 2
+        let rightX = leftX + adjustedImageWidth + spaceBetweenImages
+        let topY = centerY + (adjustedImageHeight / 2) + (spaceBetweenImages / 2)
+        let bottomY = centerY - (adjustedImageHeight / 2) - (spaceBetweenImages / 2)
+        
+        print("🔍 [DEBUG] مساحة الصفحة: \(pageRect.width) × \(pageRect.height)")
+        print("🔍 [DEBUG] أبعاد الصور المعدلة: \(adjustedImageWidth) × \(adjustedImageHeight)")
+        print("🔍 [DEBUG] المساحة الآمنة: يسار=\(safeAreaLeft), يمين=\(safeAreaRight)")
+        print("🔍 [DEBUG] المواضع: يسار=\(leftX), يمين=\(rightX)")
         
         return [
-            CGRect(x: leftX, y: topY, width: imageWidth, height: imageHeight),      // أعلى يسار
-            CGRect(x: rightX, y: topY, width: imageWidth, height: imageHeight),     // أعلى يمين
-            CGRect(x: leftX, y: bottomY, width: imageWidth, height: imageHeight),   // أسفل يسار
-            CGRect(x: rightX, y: bottomY, width: imageWidth, height: imageHeight)   // أسفل يمين
+            CGRect(x: leftX, y: topY, width: adjustedImageWidth, height: adjustedImageHeight),      // أعلى يسار
+            CGRect(x: rightX, y: topY, width: adjustedImageWidth, height: adjustedImageHeight),     // أعلى يمين
+            CGRect(x: leftX, y: bottomY, width: adjustedImageWidth, height: adjustedImageHeight),   // أسفل يسار
+            CGRect(x: rightX, y: bottomY, width: adjustedImageWidth, height: adjustedImageHeight)   // أسفل يمين
         ]
     }
     
@@ -451,18 +484,18 @@ class PDFManager: ObservableObject {
     }
     
     private func fillPDFTemplate(with formData: FormFieldsModel) throws -> URL {
-        print("🔍 [DEBUG] بدء ملء النموذج PDF باستخدام القالب فقط")
+        print("🔍 [DEBUG] بدء ملء النموذج PDF باستخدام القالب: \(formData.selectedTemplate.displayName)")
         
         // فحص القالب أولاً لمعرفة الحقول المتاحة
         inspectPDFTemplate()
         
-        // تحميل قالب PDF
-        guard let templatePath = Bundle.main.path(forResource: "template_with_placeholder", ofType: "pdf"),
+        // تحميل قالب PDF باستخدام النوع المحدد
+        guard let templatePath = Bundle.main.path(forResource: formData.selectedTemplate.rawValue, ofType: "pdf"),
               let templatePDF = PDFDocument(url: URL(fileURLWithPath: templatePath)) else {
             throw PDFError.cannotLoadTemplate
         }
         
-        print("🔍 [DEBUG] تم تحميل قالب PDF بنجاح")
+        print("🔍 [DEBUG] تم تحميل قالب PDF بنجاح: \(formData.selectedTemplate.rawValue)")
         
         // إنشاء نسخة جديدة من PDF
         let outputPDF = PDFDocument()
@@ -537,10 +570,79 @@ class PDFManager: ObservableObject {
         }
     }
     
+    // دالة للتحقق من توفر الخط المطلوب واختيار البديل المناسب
+    private func validateAndGetFont(for formData: FormFieldsModel) -> UIFont {
+        let requestedFontName = formData.selectedFontFamily
+        let fontSize = formData.selectedFontSize
+        
+        print("🔍 [FONT] التحقق من توفر الخط: '\(requestedFontName)'")
+        
+        // محاولة إنشاء الخط المطلوب
+        if let font = UIFont(name: requestedFontName, size: fontSize) {
+            print("✅ [FONT] تم العثور على الخط المطلوب: '\(requestedFontName)'")
+            return font
+        }
+        
+        print("⚠️ [FONT] الخط المطلوب غير متاح: '\(requestedFontName)'")
+        
+        // قائمة الخطوط الاحتياطية حسب الأولوية
+        let fallbackFonts = [
+            // خطوط Myriad Arabic المتاحة
+            "MyriadArabic-Regular",
+            "MyriadArabic-Bold", 
+            "MyriadArabic-SemiBold",
+            "MyriadArabic-Light",
+            // خطوط Bahij كبديل
+            "Bahij_TheSansArabic-Plain",
+            "Bahij_TheSansArabic-SemiBold",
+            "Bahij_TheSansArabic-Bold",
+            // خطوط النظام الأساسية
+            "GeezaPro-Bold",
+            "GeezaPro",
+            "Helvetica",
+            "Arial"
+        ]
+        
+        // البحث عن خط احتياطي
+        for fallbackFontName in fallbackFonts {
+            if let fallbackFont = UIFont(name: fallbackFontName, size: fontSize) {
+                print("✅ [FONT] تم اختيار الخط الاحتياطي: '\(fallbackFontName)'")
+                return fallbackFont
+            }
+        }
+        
+        // كبديل أخير، استخدام خط النظام الافتراضي
+        print("⚠️ [FONT] استخدام خط النظام الافتراضي")
+        return UIFont.systemFont(ofSize: fontSize)
+    }
+    
+    // دالة لطباعة جميع الخطوط المتاحة في النظام (للتطوير فقط)
+    private func listAvailableFonts() {
+        print("\n📝 [FONTS] قائمة الخطوط المتاحة في النظام:")
+        let fontFamilies = UIFont.familyNames.sorted()
+        
+        for (index, family) in fontFamilies.enumerated() {
+            print("  \(index + 1). \(family)")
+            let fontNames = UIFont.fontNames(forFamilyName: family)
+            for fontName in fontNames {
+                print("    - \(fontName)")
+            }
+        }
+        print("📝 [FONTS] إجمالي عائلات الخطوط: \(fontFamilies.count)\n")
+    }
+    
     private func fillFormFields(in pdf: PDFDocument, with formData: FormFieldsModel) throws {
         print("🔍 [DEBUG] بدء ملء الحقول في القالب")
         print("🎨 [FONT] الخط المحدد: \(formData.selectedFontFamily), الحجم: \(formData.selectedFontSize)")
         print("🎨 [COLOR] اللون المحدد: \(formData.selectedTextColor)")
+        
+        // التحقق من توفر الخط واختيار البديل المناسب
+        let validatedFont = validateAndGetFont(for: formData)
+        
+        // طباعة قائمة الخطوط المتاحة للتطوير (يمكن تعطيلها لاحقاً)
+        #if DEBUG
+        listAvailableFonts()
+        #endif
         
         var fieldsFound = false
         var fieldsFilled = 0
@@ -565,14 +667,9 @@ class PDFManager: ObservableObject {
                         // استخدام النص العادي فقط - PDF annotations لا تدعم NSAttributedString بشكل مباشر
                         annotation.widgetStringValue = value
                         
-                        // محاولة تطبيق خصائص الخط إذا كان ذلك ممكناًK
-                        if let font = UIFont(name: formData.selectedFontFamily, size: formData.selectedFontSize) {
-                            // تطبيق الخط على annotation إذا كان مدعوماً
-                            annotation.font = font
-                            print("✅ [FONT] تم تطبيق الخط '\(formData.selectedFontFamily)' على الحقل '\(fieldName)'")
-                        } else {
-                            print("⚠️ [WARNING] لا يمكن تطبيق الخط '\(formData.selectedFontFamily)' على الحقل '\(fieldName)'")
-                        }
+                        // تطبيق الخط المتحقق منه
+                        annotation.font = validatedFont
+                        print("✅ [FONT] تم تطبيق الخط '\(validatedFont.fontName)' على الحقل '\(fieldName)'")
                         
                         // محاولة تطبيق اللون إذا كان مدعوماً
                         annotation.color = formData.selectedTextColor

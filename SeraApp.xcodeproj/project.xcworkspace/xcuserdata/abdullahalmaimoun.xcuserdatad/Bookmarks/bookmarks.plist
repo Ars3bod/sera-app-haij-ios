@@ -36,13 +36,13 @@
 				<key>focused</key>
 				<string></string>
 				<key>leading</key>
-				<string>            
-        // التوقيع الرابع
+				<string>                        annotation.font = validatedFont
+                        print("✅ [FONT] تم تطبيق الخط '\(validatedFont.fontName)' على الحقل '\(fieldName)'")
     </string>
 				<key>trailing</key>
-				<string>    case "Text_51": // recommenderSignature_4
-            return formData.signatures.count &gt; 3 ? formData.signatures[3].representative : ""
-        case "Text_47": // recommenderEntity_4
+				<string>                    
+                        // محاولة تطبيق اللون إذا كان مدعوماً
+                        annotation.color = formData.selectedTextColor
 </string>
 			</dict>
 			<key>title</key>

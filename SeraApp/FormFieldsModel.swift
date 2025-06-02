@@ -1,27 +1,57 @@
 import Foundation
 import UIKit
 
+// إضافة enum لأنواع القوالب
+enum TemplateType: String, CaseIterable {
+    case withoutLogos = "template_with_placeholder"
+    case withLogos = "template_with_placeholder_new"
+    
+    var displayName: String {
+        switch self {
+        case .withoutLogos:
+            return "قالب بدون شعارات"
+        case .withLogos:
+            return "قالب مع شعارات"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .withoutLogos:
+            return "القالب العادي مع إمكانية تعديل جميع الحقول"
+        case .withLogos:
+            return "قالب محسن مع شعارات إضافية، حقل الجهة مقفل في التواقيع"
+        }
+    }
+}
+
 class FormFieldsModel: ObservableObject {
     // إعدادات تخصيص الخط واللون لـ PDF
     // يمكن تعديل هذه القيم في مستوى الكود لتغيير مظهر النص في PDF
     
-    // للتبديل بين خطوط Bahij المختلفة، قم بتغيير قيمة selectedFontFamily إلى أحد الخيارات التالية:
-    // "Bahij_TheSansArabic-Plain"     - عادي
-    // "Bahij_TheSansArabic-Light"     - خفيف  
-    // "Bahij_TheSansArabic-SemiLight" - نصف خفيف
-    // "Bahij_TheSansArabic-SemiBold"  - نصف عريض
-    // "Bahij_TheSansArabic-Bold"      - عريض
-    // "Bahij_TheSansArabic-ExtraBold" - عريض جداً
-    // "Bahij_TheSansArabic-Black"     - أسود
+    // للتبديل بين خطوط Myriad Arabic المختلفة، قم بتغيير قيمة selectedFontFamily إلى أحد الخيارات التالية:
+    // "MyriadArabic-Regular"      - عادي
+    // "MyriadArabic-Bold"         - عريض
+    // "MyriadArabic-SemiBold"     - نصف عريض
+    // "MyriadArabic-Light"        - خفيف
     
-    @Published var selectedFontFamily: String = "Bahij_TheSansArabic-Plain" // نوع الخط الافتراضي - خط عربي
-    @Published var selectedFontSize: CGFloat = 16.0         // حجم الخط الافتراضي (أكبر قليلاً للخط العربي)
+    @Published var selectedFontFamily: String = "MyriadArabic-Regular" // نوع الخط الافتراضي - خط عربي Myriad
+    @Published var selectedFontSize: CGFloat = 14.0         // حجم الخط الافتراضي (أكبر قليلاً للخط العربي)
     @Published var selectedTextColor: UIColor = UIColor(red: 0x00/255.0, green: 0x75/255.0, blue: 0xbe/255.0, alpha: 1.0) // اللون الأزرق الجديد #0075be
+    
+    // إضافة متغير اختيار القالب
+    @Published var selectedTemplate: TemplateType = .withoutLogos
+    @Published var isTemplateSelected: Bool = false
     
     // خيارات عائلات الخطوط المتاحة
     // يمكن إضافة أو إزالة خطوط من هذه القائمة
     let availableFonts = [
-        // خطوط Bahij TheSansArabic العربية
+        // خطوط Myriad Arabic العربية (الأولوية الأولى)
+        "MyriadArabic-Regular",
+        "MyriadArabic-Bold",
+        "MyriadArabic-SemiBold",
+        "MyriadArabic-Light",
+        // خطوط Bahij TheSansArabic العربية (احتياطية)
         "Bahij_TheSansArabic-Plain",
         "Bahij_TheSansArabic-Light", 
         "Bahij_TheSansArabic-ExtraLight",
@@ -162,9 +192,13 @@ class FormFieldsModel: ObservableObject {
     
     func clearForm() {
         // إعادة تعيين إعدادات الخط
-        selectedFontFamily = "Bahij_TheSansArabic-Plain"
-        selectedFontSize = 14.0
+        selectedFontFamily = "MyriadArabic-Regular"
+        selectedFontSize = 16.0
         selectedTextColor = UIColor(red: 0x00/255.0, green: 0x75/255.0, blue: 0xbe/255.0, alpha: 1.0)
+        
+        // إعادة تعيين اختيار القالب
+        selectedTemplate = .withoutLogos
+        isTemplateSelected = false
         
         selectedDay = ""
         selectedHour = 12

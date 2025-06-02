@@ -31,274 +31,318 @@ struct FillableFormView: View {
                 }
                 .padding(.bottom, 10)
                 
-                // القسم الأول: محضر بلاغ انقطاع الخدمة الكهربائية عن
-                FormSectionView(title: "محضر بلاغ انقطاع الخدمة الكهربائية عن", icon: "doc.text.fill", color: .orange) {
-                    VStack(spacing: 15) {
-                        // اختيار اليوم
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("اليوم")
+                // قسم اختيار القالب
+                if !formData.isTemplateSelected {
+                    TemplateSelectionView(formData: formData)
+                } else {
+                    // قسم عرض القالب المختار
+                    VStack(spacing: 10) {
+                        HStack {
+                            Image(systemName: "doc.text.fill")
+                                .foregroundColor(.blue)
+                                .font(.title2)
+                            Text("القالب المختار")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                            Spacer()
+                            Button(action: {
+                                formData.isTemplateSelected = false
+                            }) {
+                                Text("تغيير")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        
+                        HStack {
+                            Text(formData.selectedTemplate.displayName)
                                 .font(.body)
                                 .fontWeight(.medium)
                                 .foregroundColor(.primary)
-                            
-                            Picker("اختر اليوم", selection: $formData.selectedDay) {
-                                Text("اختر اليوم").tag("")
-                                ForEach(formData.daysOfWeek, id: \.self) { day in
-                                    Text(day).tag(day)
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
+                            Spacer()
                         }
-                        
-                        // اختيار الوقت (ساعة:دقيقة صباحاً/مساءً)
-                        TimePickerView(
-                            selectedHour: $formData.selectedHour,
-                            selectedMinute: $formData.selectedMinute,
-                            selectedPeriod: $formData.selectedPeriod,
-                            hours: formData.hours,
-                            minutes: formData.minutes,
-                            periods: formData.periods
-                        )
-                        
-                        // اختيار التاريخ الهجري
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("التاريخ (ذو الحجة 1446 هـ)")
-                                .font(.body)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                            
-                            Picker("اختر اليوم", selection: $formData.selectedHijriDay) {
-                                ForEach(formData.hijriDaysInMonth, id: \.self) { day in
-                                    Text("ذو الحجة \(day), 1446 هـ").tag(day)
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                        }
-                        
-                        FormFieldView(title: "الموقع", text: $formData.location, placeholder: "أدخل الموقع")
                     }
-                }
-                
-                // القسم الثاني: بيانات الموقع/المواقع المتأثرة
-                FormSectionView(title: "بيانات الموقع/المواقع المتأثرة", icon: "location.fill", color: .blue) {
-                    VStack(spacing: 15) {
-                        FormFieldView(title: "رقم الاشتراك/الاشتراكات", text: $formData.subscriptionNumber, placeholder: "أدخل رقم الاشتراك")
-                        
-                        // سعة العداد (رقمي)
-                        NumericFieldView(title: "سعة العداد (أمبير)", value: $formData.meterCapacityValue, placeholder: "أدخل سعة العداد", unit: "أمبير")
-                        
-                        // الحمل الحالي (رقمي)
-                        NumericFieldView(title: "الحمل الحالي (أمبير)", value: $formData.currentLoadValue, placeholder: "أدخل الحمل الحالي", unit: "أمبير")
-                    }
-                }
-                
-                // القسم الثالث: مصدر البلاغ
-                FormSectionView(title: "مصدر البلاغ", icon: "phone.fill", color: .green) {
-                    VStack(spacing: 15) {
-                        CheckboxView(title: "بلاغ وارد لمركز منظومة الطاقة", isChecked: $formData.reportFromEnergySystemCenter)
-                        CheckboxView(title: "بلاغ من المرخص له", isChecked: $formData.reportFromLicensee)
-                        CheckboxView(title: "رصد في مركز التحكم الخاص بالمرخص له في مشعر منى", isChecked: $formData.detectedInControlCenter)
-                        CheckboxView(title: "انقطاع خلال زيارة ميدانية", isChecked: $formData.outageFieldVisit)
-                        CheckboxView(title: "بلاغ من شركة كدانة", isChecked: $formData.reportFromKadana)
-                        CheckboxView(title: "بلاغ من الشركة المشغلة لمخيمات الحجاج", isChecked: $formData.reportFromOperatingCompany)
-                        CheckboxView(title: "أخرى", isChecked: $formData.reportFromOther)
-                    }
-                }
-                
-                // القسم الرابع: تفاصيل إضافية للتحقق والانقطاع والإعادة
-                FormSectionView(title: "تفاصيل إضافية للتحقق والانقطاع والإعادة", icon: "doc.text.below.ecg", color: .indigo) {
-                    VStack(spacing: 15) {
-                        MultilineTextFieldView(title: "التفاصيل الإضافية", text: $formData.additionalVerificationDetails, placeholder: "أدخل أي تفاصيل إضافية")
-                    }
-                }
-                
-                // القسم الخامس: التوصيات
-                VStack(alignment: .leading, spacing: 15) {
-                    HStack {
-                        Text("5. التوصيات")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        Spacer()
-                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.05))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                    )
                     
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("التوصيات:")
-                            .font(.headline)
-                        
-                        TextEditor(text: $formData.recommendations)
-                            .frame(minHeight: 100)
-                            .padding(8)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                    }
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(10)
-                .shadow(radius: 2)
-                
-                // القسم السادس: التواقيع
-                FormSectionView(title: "التواقيع", icon: "signature", color: .red) {
-                    VStack(spacing: 15) {
-                        ForEach(formData.signatures.indices, id: \.self) { index in
-                            SignatureView(
-                                signature: $formData.signatures[index],
-                                index: index + 1,
-                                onDelete: {
-                                    formData.removeSignature(at: index)
-                                }
-                            )
-                        }
-                        
-                        if formData.signatures.count < 5 {
-                            Button(action: {
-                                formData.addSignature()
-                            }) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                    Text("إضافة توقيع")
-                                }
-                                .foregroundColor(.red)
-                                .padding()
-                                .background(Color.red.opacity(0.1))
-                                .cornerRadius(10)
-                            }
-                        }
-                    }
-                }
-                
-                // القسم السابع: المرفقات (الصور)
-                FormSectionView(title: "المرفقات (الصور)", icon: "photo.fill", color: .mint) {
-                    VStack(spacing: 15) {
-                        Text("يمكن إضافة حتى 8 صور كمرفقات")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                        
-                        if formData.selectedImages.isEmpty {
-                            Button(action: {
-                                showingSourceSelection = true
-                            }) {
-                                VStack(spacing: 12) {
-                                    Image(systemName: "photo.badge.plus")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.mint)
-                                    
-                                    Text("أضف الصور")
-                                        .font(.body)
-                                        .foregroundColor(.primary)
-                                        .multilineTextAlignment(.center)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 100)
-                                .background(Color.mint.opacity(0.1))
-                                .cornerRadius(15)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .stroke(Color.mint, style: StrokeStyle(lineWidth: 2, dash: [8]))
-                                )
-                            }
-                        } else {
+                    // باقي حقول النموذج
+                    VStack(spacing: 25) {
+                        // القسم الأول: محضر بلاغ انقطاع الخدمة الكهربائية عن
+                        FormSectionView(title: "محضر بلاغ انقطاع الخدمة الكهربائية عن", icon: "doc.text.fill", color: .orange) {
                             VStack(spacing: 15) {
-                                HStack {
-                                    Text("الصور المرفقة (\(formData.selectedImages.count)/8)")
-                                        .font(.headline)
-                                        .fontWeight(.semibold)
+                                // اختيار اليوم
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("اليوم")
+                                        .font(.body)
+                                        .fontWeight(.medium)
                                         .foregroundColor(.primary)
                                     
-                                    Spacer()
+                                    Picker("اختر اليوم", selection: $formData.selectedDay) {
+                                        Text("اختر اليوم").tag("")
+                                        ForEach(formData.daysOfWeek, id: \.self) { day in
+                                            Text(day).tag(day)
+                                        }
+                                    }
+                                    .pickerStyle(MenuPickerStyle())
+                                    .padding()
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
                                 }
                                 
-                                LazyVGrid(columns: [
-                                    GridItem(.flexible()),
-                                    GridItem(.flexible())
-                                ], spacing: 15) {
-                                    ForEach(formData.selectedImages.indices, id: \.self) { index in
-                                        ImageThumbnailView(
-                                            image: formData.selectedImages[index],
-                                            onDelete: {
-                                                formData.removeImage(at: index)
-                                            }
-                                        )
-                                    }
+                                // اختيار الوقت (ساعة:دقيقة صباحاً/مساءً)
+                                TimePickerView(
+                                    selectedHour: $formData.selectedHour,
+                                    selectedMinute: $formData.selectedMinute,
+                                    selectedPeriod: $formData.selectedPeriod,
+                                    hours: formData.hours,
+                                    minutes: formData.minutes,
+                                    periods: formData.periods
+                                )
+                                
+                                // اختيار التاريخ الهجري
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("التاريخ (ذو الحجة 1446 هـ)")
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.primary)
                                     
-                                    if formData.selectedImages.count < 8 {
-                                        AddImageButton(action: {
-                                            showingSourceSelection = true
-                                        })
+                                    Picker("اختر اليوم", selection: $formData.selectedHijriDay) {
+                                        ForEach(formData.hijriDaysInMonth, id: \.self) { day in
+                                            Text("ذو الحجة \(day), 1446 هـ").tag(day)
+                                        }
+                                    }
+                                    .pickerStyle(MenuPickerStyle())
+                                    .padding()
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                                }
+                                
+                                FormFieldView(title: "الموقع", text: $formData.location, placeholder: "أدخل الموقع")
+                            }
+                        }
+                        
+                        // القسم الثاني: بيانات الموقع/المواقع المتأثرة
+                        FormSectionView(title: "بيانات الموقع/المواقع المتأثرة", icon: "location.fill", color: .blue) {
+                            VStack(spacing: 15) {
+                                FormFieldView(title: "رقم الاشتراك/الاشتراكات", text: $formData.subscriptionNumber, placeholder: "أدخل رقم الاشتراك")
+                                
+                                // سعة العداد (رقمي)
+                                NumericFieldView(title: "سعة العداد (أمبير)", value: $formData.meterCapacityValue, placeholder: "أدخل سعة العداد", unit: "أمبير")
+                                
+                                // الحمل الحالي (رقمي)
+                                NumericFieldView(title: "الحمل الحالي (أمبير)", value: $formData.currentLoadValue, placeholder: "أدخل الحمل الحالي", unit: "أمبير")
+                            }
+                        }
+                        
+                        // القسم الثالث: مصدر البلاغ
+                        FormSectionView(title: "مصدر البلاغ", icon: "phone.fill", color: .green) {
+                            VStack(spacing: 15) {
+                                CheckboxView(title: "بلاغ وارد لمركز منظومة الطاقة", isChecked: $formData.reportFromEnergySystemCenter)
+                                CheckboxView(title: "بلاغ من المرخص له", isChecked: $formData.reportFromLicensee)
+                                CheckboxView(title: "رصد في مركز التحكم الخاص بالمرخص له في مشعر منى", isChecked: $formData.detectedInControlCenter)
+                                CheckboxView(title: "انقطاع خلال زيارة ميدانية", isChecked: $formData.outageFieldVisit)
+                                CheckboxView(title: "بلاغ من شركة كدانة", isChecked: $formData.reportFromKadana)
+                                CheckboxView(title: "بلاغ من الشركة المشغلة لمخيمات الحجاج", isChecked: $formData.reportFromOperatingCompany)
+                                CheckboxView(title: "أخرى", isChecked: $formData.reportFromOther)
+                            }
+                        }
+                        
+                        // القسم الرابع: تفاصيل إضافية للتحقق والانقطاع والإعادة
+                        FormSectionView(title: "تفاصيل إضافية للتحقق والانقطاع والإعادة", icon: "doc.text.below.ecg", color: .indigo) {
+                            VStack(spacing: 15) {
+                                MultilineTextFieldView(title: "التفاصيل الإضافية", text: $formData.additionalVerificationDetails, placeholder: "أدخل أي تفاصيل إضافية")
+                            }
+                        }
+                        
+                        // القسم الخامس: التوصيات
+                        VStack(alignment: .leading, spacing: 15) {
+                            HStack {
+                                Text("5. التوصيات")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                Spacer()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("التوصيات:")
+                                    .font(.headline)
+                                
+                                TextEditor(text: $formData.recommendations)
+                                    .frame(minHeight: 100)
+                                    .padding(8)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                            }
+                        }
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 2)
+                        
+                        // القسم السادس: التواقيع
+                        FormSectionView(title: "التواقيع", icon: "signature", color: .red) {
+                            VStack(spacing: 15) {
+                                ForEach(formData.signatures.indices, id: \.self) { index in
+                                    SignatureView(
+                                        signature: $formData.signatures[index],
+                                        index: index + 1,
+                                        onDelete: {
+                                            formData.removeSignature(at: index)
+                                        },
+                                        templateType: formData.selectedTemplate
+                                    )
+                                }
+                                
+                                if formData.signatures.count < 5 {
+                                    Button(action: {
+                                        formData.addSignature()
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "plus.circle.fill")
+                                            Text("إضافة توقيع")
+                                        }
+                                        .foregroundColor(.red)
+                                        .padding()
+                                        .background(Color.red.opacity(0.1))
+                                        .cornerRadius(10)
                                     }
                                 }
                             }
                         }
-                    }
-                }
-                
-                // زر إنشاء PDF
-                VStack(spacing: 15) {
-                    Button(action: {
-                        pdfManager.generateFilledPDF(with: formData) { url in
-                            if url != nil {
-                                showingSuccess = true
+                        
+                        // القسم السابع: المرفقات (الصور)
+                        FormSectionView(title: "المرفقات (الصور)", icon: "photo.fill", color: .mint) {
+                            VStack(spacing: 15) {
+                                Text("يمكن إضافة حتى 8 صور كمرفقات")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                
+                                if formData.selectedImages.isEmpty {
+                                    Button(action: {
+                                        showingSourceSelection = true
+                                    }) {
+                                        VStack(spacing: 12) {
+                                            Image(systemName: "photo.badge.plus")
+                                                .font(.system(size: 40))
+                                                .foregroundColor(.mint)
+                                            
+                                            Text("أضف الصور")
+                                                .font(.body)
+                                                .foregroundColor(.primary)
+                                                .multilineTextAlignment(.center)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 100)
+                                        .background(Color.mint.opacity(0.1))
+                                        .cornerRadius(15)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 15)
+                                                .stroke(Color.mint, style: StrokeStyle(lineWidth: 2, dash: [8]))
+                                        )
+                                    }
+                                } else {
+                                    VStack(spacing: 15) {
+                                        HStack {
+                                            Text("الصور المرفقة (\(formData.selectedImages.count)/8)")
+                                                .font(.headline)
+                                                .fontWeight(.semibold)
+                                                .foregroundColor(.primary)
+                                            
+                                            Spacer()
+                                        }
+                                        
+                                        LazyVGrid(columns: [
+                                            GridItem(.flexible()),
+                                            GridItem(.flexible())
+                                        ], spacing: 15) {
+                                            ForEach(formData.selectedImages.indices, id: \.self) { index in
+                                                ImageThumbnailView(
+                                                    image: formData.selectedImages[index],
+                                                    onDelete: {
+                                                        formData.removeImage(at: index)
+                                                    }
+                                                )
+                                            }
+                                            
+                                            if formData.selectedImages.count < 8 {
+                                                AddImageButton(action: {
+                                                    showingSourceSelection = true
+                                                })
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }) {
-                        HStack {
-                            if pdfManager.isProcessing {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                                Text("جاري الإنشاء...")
-                                    .fontWeight(.semibold)
-                            } else {
-                                Image(systemName: "doc.fill")
-                                Text("إنشاء محضر PDF")
-                                    .fontWeight(.semibold)
+                        
+                        // زر إنشاء PDF
+                        VStack(spacing: 15) {
+                            Button(action: {
+                                pdfManager.generateFilledPDF(with: formData) { url in
+                                    if url != nil {
+                                        showingSuccess = true
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    if pdfManager.isProcessing {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                            .scaleEffect(0.8)
+                                        Text("جاري الإنشاء...")
+                                            .fontWeight(.semibold)
+                                    } else {
+                                        Image(systemName: "doc.fill")
+                                        Text("إنشاء محضر PDF")
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 55)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.orange, .orange.opacity(0.8)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(15)
+                                .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .disabled(pdfManager.isProcessing)
+                            
+                            if let errorMessage = pdfManager.errorMessage {
+                                Text(errorMessage)
+                                    .foregroundColor(.red)
+                                    .font(.caption)
+                                    .multilineTextAlignment(.center)
                             }
                         }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 55)
-                        .background(
-                            LinearGradient(
-                                colors: [.orange, .orange.opacity(0.8)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(15)
-                        .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-                    .disabled(pdfManager.isProcessing)
-                    
-                    if let errorMessage = pdfManager.errorMessage {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 30)
+                        
+                        Spacer(minLength: 50)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 30)
-                
-                Spacer(minLength: 50)
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -508,6 +552,7 @@ struct SignatureView: View {
     @Binding var signature: Signature
     let index: Int
     let onDelete: () -> Void
+    let templateType: TemplateType
     
     var body: some View {
         VStack(spacing: 15) {
@@ -524,7 +569,13 @@ struct SignatureView: View {
             }
             
             VStack(spacing: 10) {
-                FormFieldView(title: "الجهة", text: $signature.organization, placeholder: "أدخل اسم الجهة")
+                // حقل الجهة - مقفل إذا كان القالب مع شعارات
+                if templateType == .withLogos {
+                    LockedFormFieldView(title: "الجهة", lockedText: "الجهة محددة بالقالب")
+                } else {
+                    FormFieldView(title: "الجهة", text: $signature.organization, placeholder: "أدخل اسم الجهة")
+                }
+                
                 FormFieldView(title: "ممثل الجهة", text: $signature.representative, placeholder: "أدخل اسم ممثل الجهة")
             }
         }
@@ -587,6 +638,40 @@ struct FormFieldView: View {
             TextField(placeholder, text: $text)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .environment(\.layoutDirection, .rightToLeft)
+        }
+    }
+}
+
+// حقل مقفل (غير قابل للتحرير)
+struct LockedFormFieldView: View {
+    let title: String
+    let lockedText: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            HStack {
+                Text(lockedText)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                    )
+                
+                Image(systemName: "lock.fill")
+                    .foregroundColor(.orange)
+                    .font(.caption)
+            }
         }
     }
 }
@@ -697,6 +782,139 @@ struct TimePickerView: View {
             .background(Color.gray.opacity(0.05))
             .cornerRadius(12)
         }
+    }
+}
+
+// عرض اختيار القالب
+struct TemplateSelectionView: View {
+    @ObservedObject var formData: FormFieldsModel
+    @State private var selectedType: TemplateType = .withoutLogos
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // رأس القسم
+            HStack {
+                Image(systemName: "doc.text.fill")
+                    .foregroundColor(.blue)
+                    .font(.title2)
+                Text("اختيار القالب")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            
+            Text("يرجى اختيار نوع القالب المطلوب")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            // خيارات القوالب
+            VStack(spacing: 15) {
+                ForEach(TemplateType.allCases, id: \.self) { templateType in
+                    TemplateOptionView(
+                        templateType: templateType,
+                        isSelected: selectedType == templateType,
+                        onTap: {
+                            selectedType = templateType
+                        }
+                    )
+                }
+            }
+            
+            // زر التأكيد
+            Button(action: {
+                formData.selectedTemplate = selectedType
+                formData.isTemplateSelected = true
+            }) {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("تأكيد الاختيار")
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(
+                    LinearGradient(
+                        colors: [.blue, .blue.opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(12)
+                .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 2)
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// عرض خيار قالب واحد
+struct TemplateOptionView: View {
+    let templateType: TemplateType
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(isSelected ? .blue : .gray)
+                        .font(.title2)
+                    
+                    Text(templateType.displayName)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    if templateType == .withLogos {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.orange)
+                            .font(.caption)
+                    }
+                }
+                
+                Text(templateType.description)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                if templateType == .withLogos {
+                    HStack {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.orange)
+                            .font(.caption)
+                        Text("ملاحظة: حقل الجهة سيكون مقفلاً في التواقيع")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.blue.opacity(0.1) : Color.gray.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.blue : Color.gray.opacity(0.3), lineWidth: isSelected ? 2 : 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
