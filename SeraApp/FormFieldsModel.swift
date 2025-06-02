@@ -3,12 +3,34 @@ import UIKit
 
 class FormFieldsModel: ObservableObject {
     // إعدادات تخصيص الخط واللون لـ PDF
-    @Published var selectedFontFamily: String = "Helvetica"
-    @Published var selectedFontSize: CGFloat = 12.0
-    @Published var selectedTextColor: UIColor = .black
+    // يمكن تعديل هذه القيم في مستوى الكود لتغيير مظهر النص في PDF
+    
+    // للتبديل بين خطوط Bahij المختلفة، قم بتغيير قيمة selectedFontFamily إلى أحد الخيارات التالية:
+    // "Bahij_TheSansArabic-Plain"     - عادي
+    // "Bahij_TheSansArabic-Light"     - خفيف  
+    // "Bahij_TheSansArabic-SemiLight" - نصف خفيف
+    // "Bahij_TheSansArabic-SemiBold"  - نصف عريض
+    // "Bahij_TheSansArabic-Bold"      - عريض
+    // "Bahij_TheSansArabic-ExtraBold" - عريض جداً
+    // "Bahij_TheSansArabic-Black"     - أسود
+    
+    @Published var selectedFontFamily: String = "Bahij_TheSansArabic-Plain" // نوع الخط الافتراضي - خط عربي
+    @Published var selectedFontSize: CGFloat = 16.0         // حجم الخط الافتراضي (أكبر قليلاً للخط العربي)
+    @Published var selectedTextColor: UIColor = UIColor(red: 0x00/255.0, green: 0x75/255.0, blue: 0xbe/255.0, alpha: 1.0) // اللون الأزرق الجديد #0075be
     
     // خيارات عائلات الخطوط المتاحة
+    // يمكن إضافة أو إزالة خطوط من هذه القائمة
     let availableFonts = [
+        // خطوط Bahij TheSansArabic العربية
+        "Bahij_TheSansArabic-Plain",
+        "Bahij_TheSansArabic-Light", 
+        "Bahij_TheSansArabic-ExtraLight",
+        "Bahij_TheSansArabic-SemiLight",
+        "Bahij_TheSansArabic-SemiBold",
+        "Bahij_TheSansArabic-Bold",
+        "Bahij_TheSansArabic-ExtraBold",
+        "Bahij_TheSansArabic-Black",
+        // خطوط النظام الاحتياطية
         "Helvetica",
         "Helvetica-Bold",
         "Times-Roman", 
@@ -21,11 +43,12 @@ class FormFieldsModel: ObservableObject {
         "Georgia-Bold"
     ]
     
-    // خيارات أحجام الخط
+    // خيارات أحجام الخط المتاحة
     let fontSizes: [CGFloat] = [8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24]
     
-    // خيارات الألوان الشائعة
+    // خيارات الألوان الشائعة المتاحة
     let commonColors: [(name: String, color: UIColor)] = [
+        ("أزرق سيرا", UIColor(red: 0x00/255.0, green: 0x75/255.0, blue: 0xbe/255.0, alpha: 1.0)), // اللون الجديد #0075be
         ("أسود", .black),
         ("أزرق", .blue), 
         ("أحمر", .red),
@@ -90,16 +113,13 @@ class FormFieldsModel: ObservableObject {
     @Published var reportFromOperatingCompany = false
     @Published var reportFromOther = false
     
-    // القسم الرابع: مراحل إعادة الخدمة الكهربائية (حتى 3 صفوف)
-    @Published var restorationPhases: [RestorationPhase] = []
-    
-    // القسم الخامس: تفاصيل إضافية للتحقق والانقطاع والإعادة
+    // القسم الرابع: تفاصيل إضافية للتحقق والانقطاع والإعادة
     @Published var additionalVerificationDetails: String = ""
     
-    // القسم السادس: التوصيات (حتى 3 صفوف)
-    @Published var recommendations: [Recommendation] = []
+    // القسم الخامس: التوصيات (حقل نص واحد فقط)
+    @Published var recommendations: String = ""
     
-    // القسم السابع: التواقيع (حتى 5 صفوف)
+    // القسم السادس: التواقيع (حتى 5 صفوف)
     @Published var signatures: [Signature] = []
     
     // الصور المرفقة
@@ -115,30 +135,6 @@ class FormFieldsModel: ObservableObject {
         }
     }
     
-    func addRestorationPhase() {
-        if restorationPhases.count < 3 {
-            restorationPhases.append(RestorationPhase())
-        }
-    }
-    
-    func removeRestorationPhase(at index: Int) {
-        if index < restorationPhases.count {
-            restorationPhases.remove(at: index)
-        }
-    }
-    
-    func addRecommendation() {
-        if recommendations.count < 3 {
-            recommendations.append(Recommendation())
-        }
-    }
-    
-    func removeRecommendation(at index: Int) {
-        if index < recommendations.count {
-            recommendations.remove(at: index)
-        }
-    }
-    
     func addSignature() {
         if signatures.count < 5 {
             signatures.append(Signature())
@@ -151,11 +147,24 @@ class FormFieldsModel: ObservableObject {
         }
     }
     
+    // دالة مساعدة لتخصيص إعدادات الخط - يمكن استدعاؤها في بداية التطبيق
+    func customizeFontSettings(fontFamily: String? = nil, fontSize: CGFloat? = nil, textColor: UIColor? = nil) {
+        if let fontFamily = fontFamily {
+            selectedFontFamily = fontFamily
+        }
+        if let fontSize = fontSize {
+            selectedFontSize = fontSize  
+        }
+        if let textColor = textColor {
+            selectedTextColor = textColor
+        }
+    }
+    
     func clearForm() {
         // إعادة تعيين إعدادات الخط
-        selectedFontFamily = "Helvetica"
-        selectedFontSize = 12.0
-        selectedTextColor = .black
+        selectedFontFamily = "Bahij_TheSansArabic-Plain"
+        selectedFontSize = 14.0
+        selectedTextColor = UIColor(red: 0x00/255.0, green: 0x75/255.0, blue: 0xbe/255.0, alpha: 1.0)
         
         selectedDay = ""
         selectedHour = 12
@@ -173,51 +182,10 @@ class FormFieldsModel: ObservableObject {
         reportFromKadana = false
         reportFromOperatingCompany = false
         reportFromOther = false
-        restorationPhases.removeAll()
         additionalVerificationDetails = ""
-        recommendations.removeAll()
+        recommendations = ""
         signatures.removeAll()
         selectedImages.removeAll()
-    }
-}
-
-struct RestorationPhase: Identifiable {
-    let id = UUID()
-    var phaseNumber: String = ""
-    var outageDurationValue: Double = 0.0
-    var affectedCountValue: Int = 0
-    var restorationMethod: String = ""
-    
-    // للتوافق مع النظام القديم
-    var outageeDuration: String { 
-        outageDurationValue == 0 ? "" : String(format: "%.1f", outageDurationValue) 
-    }
-    var affectedCount: String { 
-        affectedCountValue == 0 ? "" : String(affectedCountValue) 
-    }
-}
-
-struct Recommendation: Identifiable {
-    let id = UUID()
-    var recommendationText: String = ""
-    var responsibleParty: String = ""
-    var targetHijriYear: Int = 1446
-    var targetHijriMonth: Int = 1
-    var targetHijriDay: Int = 1
-    
-    // أشهر السنة الهجرية
-    static let hijriMonths = [
-        "محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الثانية",
-        "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
-    ]
-    
-    // للتوافق مع النظام القديم
-    var targetDate: String { 
-        if targetHijriYear == 1446 && targetHijriMonth == 1 && targetHijriDay == 1 {
-            return ""
-        }
-        let monthName = Recommendation.hijriMonths[targetHijriMonth - 1]
-        return "\(monthName) \(targetHijriDay), \(targetHijriYear) هـ"
     }
 }
 

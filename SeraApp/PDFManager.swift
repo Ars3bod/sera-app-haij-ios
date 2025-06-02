@@ -11,7 +11,7 @@ class PDFManager: ObservableObject {
     
     // تحميل قالب PDF من المشروع
     func loadPDFTemplate() -> PDFDocument? {
-        guard let url = Bundle.main.url(forResource: "template_with_placeholders", withExtension: "pdf"),
+        guard let url = Bundle.main.url(forResource: "template_with_placeholder", withExtension: "pdf"),
               let pdfDocument = PDFDocument(url: url) else {
             errorMessage = "لم يتم العثور على قالب PDF"
             return nil
@@ -96,74 +96,40 @@ class PDFManager: ObservableObject {
         let secondLastPageBounds = secondLastPage.bounds(for: .mediaBox)
         let lastPageBounds = lastPage.bounds(for: .mediaBox)
         
-        // حساب أبعاد الصور (أصغر قليلاً لتتسع 4 صور)
-        let imageWidth: CGFloat = 200
-        let imageHeight: CGFloat = 200
-        let spaceBetweenImages: CGFloat = 20
+        // حساب أبعاد الصور (أكبر لتحسين الوضوح)
+        let imageWidth: CGFloat = 300   // زيادة من 200 إلى 340
+        let imageHeight: CGFloat = 300  // زيادة من 200 إلى 340
+        let spaceBetweenImages: CGFloat = 15 // تقليل المسافة من 20 إلى 10
         
-        var positions: [(pageIndex: Int, rect: CGRect)] = []
+        // حساب المواضع للصفحة الثانية من الآخر (الصفحة قبل الأخيرة)
+        let leftX_page2 = (secondLastPageBounds.width - (2 * imageWidth + spaceBetweenImages)) / 2
+        let rightX_page2 = leftX_page2 + imageWidth + spaceBetweenImages
         
-        // الصفحة قبل الأخيرة - 4 صور في شبكة 2×2
-        let secondLastPageCenterX = secondLastPageBounds.width / 2
-        let secondLastPageCenterY = secondLastPageBounds.height * 0.5  // وضع الصور في المنتصف (50%)
+        let centerY_page2 = secondLastPageBounds.height * 0.5
+        let topY_page2 = centerY_page2 + (imageHeight / 2) + (spaceBetweenImages / 2)
+        let bottomY_page2 = centerY_page2 - (imageHeight / 2) - (spaceBetweenImages / 2)
         
-        // حساب المواضع للشبكة 2×2 في الصفحة قبل الأخيرة
-        let topY = secondLastPageCenterY + 50
-        let bottomY = secondLastPageCenterY - imageHeight - 50
-        let leftX = secondLastPageCenterX - imageWidth - spaceBetweenImages/2
-        let rightX = secondLastPageCenterX + spaceBetweenImages/2
+        // حساب المواضع للصفحة الأخيرة
+        let leftX_page3 = (lastPageBounds.width - (2 * imageWidth + spaceBetweenImages)) / 2
+        let rightX_page3 = leftX_page3 + imageWidth + spaceBetweenImages
         
-        // الصورة 1 - أعلى يسار
-        positions.append((pageIndex: secondLastPageIndex, rect: CGRect(
-            x: leftX, y: topY, width: imageWidth, height: imageHeight
-        )))
+        let centerY_page3 = lastPageBounds.height * 0.5
+        let topY_page3 = centerY_page3 + (imageHeight / 2) + (spaceBetweenImages / 2)
+        let bottomY_page3 = centerY_page3 - (imageHeight / 2) - (spaceBetweenImages / 2)
         
-        // الصورة 2 - أعلى يمين
-        positions.append((pageIndex: secondLastPageIndex, rect: CGRect(
-            x: rightX, y: topY, width: imageWidth, height: imageHeight
-        )))
-        
-        // الصورة 3 - أسفل يسار
-        positions.append((pageIndex: secondLastPageIndex, rect: CGRect(
-            x: leftX, y: bottomY, width: imageWidth, height: imageHeight
-        )))
-        
-        // الصورة 4 - أسفل يمين
-        positions.append((pageIndex: secondLastPageIndex, rect: CGRect(
-            x: rightX, y: bottomY, width: imageWidth, height: imageHeight
-        )))
-        
-        // الصفحة الأخيرة - 4 صور في شبكة 2×2
-        let lastPageCenterX = lastPageBounds.width / 2
-        let lastPageCenterY = lastPageBounds.height * 0.5  // وضع الصور في المنتصف (50%)
-        
-        // حساب المواضع للشبكة 2×2 في الصفحة الأخيرة
-        let lastTopY = lastPageCenterY + 50
-        let lastBottomY = lastPageCenterY - imageHeight - 50
-        let lastLeftX = lastPageCenterX - imageWidth - spaceBetweenImages/2
-        let lastRightX = lastPageCenterX + spaceBetweenImages/2
-        
-        // الصورة 5 - أعلى يسار
-        positions.append((pageIndex: lastPageIndex, rect: CGRect(
-            x: lastLeftX, y: lastTopY, width: imageWidth, height: imageHeight
-        )))
-        
-        // الصورة 6 - أعلى يمين
-        positions.append((pageIndex: lastPageIndex, rect: CGRect(
-            x: lastRightX, y: lastTopY, width: imageWidth, height: imageHeight
-        )))
-        
-        // الصورة 7 - أسفل يسار
-        positions.append((pageIndex: lastPageIndex, rect: CGRect(
-            x: lastLeftX, y: lastBottomY, width: imageWidth, height: imageHeight
-        )))
-        
-        // الصورة 8 - أسفل يمين
-        positions.append((pageIndex: lastPageIndex, rect: CGRect(
-            x: lastRightX, y: lastBottomY, width: imageWidth, height: imageHeight
-        )))
-        
-        return positions
+        return [
+            // الصفحة قبل الأخيرة - 4 صور
+            (secondLastPageIndex, CGRect(x: leftX_page2, y: topY_page2, width: imageWidth, height: imageHeight)),      // أعلى يسار
+            (secondLastPageIndex, CGRect(x: rightX_page2, y: topY_page2, width: imageWidth, height: imageHeight)),     // أعلى يمين
+            (secondLastPageIndex, CGRect(x: leftX_page2, y: bottomY_page2, width: imageWidth, height: imageHeight)),   // أسفل يسار
+            (secondLastPageIndex, CGRect(x: rightX_page2, y: bottomY_page2, width: imageWidth, height: imageHeight)),  // أسفل يمين
+            
+            // الصفحة الأخيرة - 4 صور
+            (lastPageIndex, CGRect(x: leftX_page3, y: topY_page3, width: imageWidth, height: imageHeight)),      // أعلى يسار
+            (lastPageIndex, CGRect(x: rightX_page3, y: topY_page3, width: imageWidth, height: imageHeight)),     // أعلى يمين
+            (lastPageIndex, CGRect(x: leftX_page3, y: bottomY_page3, width: imageWidth, height: imageHeight)),   // أسفل يسار
+            (lastPageIndex, CGRect(x: rightX_page3, y: bottomY_page3, width: imageWidth, height: imageHeight))   // أسفل يمين
+        ]
     }
     
     // تسطيح PDF لجعله غير قابل للتحرير
@@ -313,12 +279,33 @@ class PDFManager: ObservableObject {
         }
         
         UIGraphicsEndPDFContext()
+        
+        // تطبيق تسطيح PDF للتأكد من أن الملف غير قابل للتحرير
+        print("🔄 [FLATTEN] تطبيق تسطيح على PDF مع الصور...")
+        
+        if let finalPDF = PDFDocument(url: outputURL),
+           let flattenedPDF = flattenPDF(finalPDF) {
+            
+            // إنشاء مسار جديد للملف المُسطح
+            let flattenedURL = documentsPath.appendingPathComponent("SERA_PDF_with_Images_Flattened_\(timestamp).pdf")
+            if flattenedPDF.write(to: flattenedURL) {
+                print("✅ [SUCCESS] تم إنشاء PDF مُسطح بنجاح في: \(flattenedURL)")
+                
+                // حذف الملف المؤقت
+                try? FileManager.default.removeItem(at: outputURL)
+                
+                return flattenedURL
+            }
+        }
+        
+        // في حالة فشل التسطيح، إرجاع الملف الأصلي
+        print("⚠️ [WARNING] تم إنشاء PDF بدون تسطيح إضافي")
         print("✅ [SUCCESS] تم إنشاء PDF بنجاح في: \(outputURL)")
         return outputURL
     }
     
     private func addImagesToPage(context: CGContext, pageRect: CGRect, images: [UIImage]) {
-        let positions = getImagePositions(for: pageRect)
+        let positions = getImagePositionsForPage(pageRect: pageRect)
         
         for (index, image) in images.enumerated() {
             if index < positions.count {
@@ -327,16 +314,17 @@ class PDFManager: ObservableObject {
         }
     }
     
-    private func getImagePositions(for pageRect: CGRect) -> [CGRect] {
-        let imageWidth: CGFloat = 200
-        let imageHeight: CGFloat = 200
+    private func getImagePositionsForPage(pageRect: CGRect) -> [CGRect] {
+        let imageWidth: CGFloat = 340   // زيادة من 200 إلى 340
+        let imageHeight: CGFloat = 340  // زيادة من 200 إلى 340
+        let spaceBetweenImages: CGFloat = 10 // تقليل المسافة من 20 إلى 10
         
         // حساب المواضع في شبكة 2×2 - أكثر توسطاً في الصفحة
         let centerY = pageRect.height * 0.5  // وضع الصور في المنتصف (50%)
-        let leftX: CGFloat = 30
-        let rightX = pageRect.width - 30 - imageWidth
-        let topY = centerY + 50
-        let bottomY = centerY - imageHeight - 50
+        let leftX = (pageRect.width - (2 * imageWidth + spaceBetweenImages)) / 2
+        let rightX = leftX + imageWidth + spaceBetweenImages
+        let topY = centerY + (imageHeight / 2) + (spaceBetweenImages / 2)
+        let bottomY = centerY - (imageHeight / 2) - (spaceBetweenImages / 2)
         
         return [
             CGRect(x: leftX, y: topY, width: imageWidth, height: imageHeight),      // أعلى يسار
@@ -420,26 +408,6 @@ class PDFManager: ObservableObject {
         }
     }
     
-    private func getImagePositionsForPage(pageRect: CGRect) -> [CGRect] {
-        // استخدام نفس أحجام ومواضع الصور من الخدمة المساعدة
-        let imageWidth: CGFloat = 200
-        let imageHeight: CGFloat = 200
-        
-        // حساب المواضع في شبكة 2×2 - في المنتصف تماماً
-        let centerY = pageRect.height * 0.5  // وضع الصور في المنتصف (50%)
-        let leftX: CGFloat = 30
-        let rightX = pageRect.width - 30 - imageWidth
-        let topY = centerY + 50
-        let bottomY = centerY - imageHeight - 50
-        
-        return [
-            CGRect(x: leftX, y: topY, width: imageWidth, height: imageHeight),      // أعلى يسار
-            CGRect(x: rightX, y: topY, width: imageWidth, height: imageHeight),     // أعلى يمين
-            CGRect(x: leftX, y: bottomY, width: imageWidth, height: imageHeight),   // أسفل يسار
-            CGRect(x: rightX, y: bottomY, width: imageWidth, height: imageHeight)   // أسفل يمين
-        ]
-    }
-    
     private func addImageToPDFPage(_ page: PDFPage, image: UIImage, at rect: CGRect) throws {
         // هذه الطريقة لم تعد مستخدمة
     }
@@ -489,7 +457,7 @@ class PDFManager: ObservableObject {
         inspectPDFTemplate()
         
         // تحميل قالب PDF
-        guard let templatePath = Bundle.main.path(forResource: "template_with_placeholders", ofType: "pdf"),
+        guard let templatePath = Bundle.main.path(forResource: "template_with_placeholder", ofType: "pdf"),
               let templatePDF = PDFDocument(url: URL(fileURLWithPath: templatePath)) else {
             throw PDFError.cannotLoadTemplate
         }
@@ -514,8 +482,17 @@ class PDFManager: ObservableObject {
             try addImagesToLastPages(pdf: outputPDF, images: formData.selectedImages)
         }
         
-        // حفظ الملف
-        return try savePDF(outputPDF, filename: "Electrical_Outage_Report")
+        // تطبيق تسطيح PDF لجعله غير قابل للتحرير
+        print("🔄 [FLATTEN] بدء تسطيح PDF لجعله غير قابل للتحرير...")
+        guard let flattenedPDF = flattenPDF(outputPDF) else {
+            print("⚠️ [WARNING] فشل في تسطيح PDF، سيتم حفظ النسخة الأصلية")
+            return try savePDF(outputPDF, filename: "Electrical_Outage_Report")
+        }
+        
+        print("✅ [SUCCESS] تم تسطيح PDF بنجاح")
+        
+        // حفظ الملف المُسطح
+        return try savePDF(flattenedPDF, filename: "Electrical_Outage_Report_Flattened")
     }
     
     private func addEmptyPagesForImages(to pdf: PDFDocument, pageRect: CGRect) {
@@ -580,49 +557,53 @@ class PDFManager: ObservableObject {
                     print("🔍 [DEBUG] العثور على حقل: '\(fieldName)', نوع: \(annotation.type ?? "غير محدد")")
                     fieldsFound = true
                     
-                    // ملء الحقول بناءً على اسم الحقل الدقيق
+                    // الحصول على القيمة مرة واحدة
                     let value = getValueForField(fieldName: fieldName, formData: formData)
                     
-                    if !value.isEmpty {
-                        // محاولة ملء الحقل بالقيمة مع تنسيق مخصص
-                        if annotation.widgetFieldType == .text {
-                            // استخدام النص المنسق مع الخط واللون المخصص
-                            let attributedText = createAttributedString(
-                                text: value,
-                                font: formData.selectedFontFamily,
-                                fontSize: formData.selectedFontSize,
-                                color: formData.selectedTextColor
-                            )
-                            
-                            // تطبيق النص المنسق
-                            if let attributedText = attributedText {
-                                annotation.setValue(attributedText, forAnnotationKey: .widgetValue)
-                                print("✅ [SUCCESS] تم ملء حقل النص '\(fieldName)' بنص منسق: '\(value)'")
-                            } else {
-                                // fallback للنص العادي إذا فشل النص المنسق
-                                annotation.widgetStringValue = value
-                                print("✅ [FALLBACK] تم ملء حقل النص '\(fieldName)' بنص عادي: '\(value)'")
-                            }
+                    // ملء الحقول بناءً على نوع الحقل
+                    if annotation.widgetFieldType == .text {
+                        // استخدام النص العادي فقط - PDF annotations لا تدعم NSAttributedString بشكل مباشر
+                        annotation.widgetStringValue = value
+                        
+                        // محاولة تطبيق خصائص الخط إذا كان ذلك ممكناًK
+                        if let font = UIFont(name: formData.selectedFontFamily, size: formData.selectedFontSize) {
+                            // تطبيق الخط على annotation إذا كان مدعوماً
+                            annotation.font = font
+                            print("✅ [FONT] تم تطبيق الخط '\(formData.selectedFontFamily)' على الحقل '\(fieldName)'")
+                        } else {
+                            print("⚠️ [WARNING] لا يمكن تطبيق الخط '\(formData.selectedFontFamily)' على الحقل '\(fieldName)'")
+                        }
+                        
+                        // محاولة تطبيق اللون إذا كان مدعوماً
+                        annotation.color = formData.selectedTextColor
+                        print("✅ [COLOR] تم تطبيق اللون على الحقل '\(fieldName)'")
+                        
+                        if !value.isEmpty {
                             fieldsFilled += 1
-                            
-                        } else if annotation.widgetFieldType == .choice {
-                            // للقوائم المنسدلة - نص عادي فقط
-                            annotation.widgetStringValue = value
+                            print("✅ [SUCCESS] تم ملء حقل النص '\(fieldName)' بالقيمة: '\(value)'")
+                        }
+                        
+                    } else if annotation.widgetFieldType == .choice {
+                        // للقوائم المنسدلة - نص عادي فقط
+                        annotation.widgetStringValue = value
+                        if !value.isEmpty {
                             fieldsFilled += 1
                             print("✅ [SUCCESS] تم ملء القائمة '\(fieldName)' بالقيمة: '\(value)'")
-                            
-                        } else if annotation.widgetFieldType == .button {
-                            // للأزرار/checkboxes
-                            if value.lowercased() == "yes" || value == "1" || value == "✓" {
-                                annotation.buttonWidgetState = .onState
-                                fieldsFilled += 1
-                                print("✅ [SUCCESS] تم تفعيل checkbox '\(fieldName)'")
-                            } else {
-                                annotation.buttonWidgetState = .offState
-                                print("📝 [INFO] تم ترك checkbox '\(fieldName)' فارغ")
-                            }
                         }
-                    } else {
+                        
+                    } else if annotation.widgetFieldType == .button {
+                        // للأزرار/checkboxes
+                        if value.lowercased() == "yes" || value == "1" || value == "✓" {
+                            annotation.buttonWidgetState = .onState
+                            fieldsFilled += 1
+                            print("✅ [SUCCESS] تم تفعيل checkbox '\(fieldName)'")
+                        } else {
+                            annotation.buttonWidgetState = .offState
+                            print("📝 [INFO] تم ترك checkbox '\(fieldName)' فارغ")
+                        }
+                    }
+                    
+                    if value.isEmpty {
                         print("⚠️ [WARNING] لم يتم العثور على قيمة للحقل '\(fieldName)'")
                     }
                 }
@@ -642,148 +623,79 @@ class PDFManager: ObservableObject {
         }
     }
     
-    // دالة مساعدة لإنشاء NSAttributedString مع تنسيق مخصص
-    private func createAttributedString(text: String, font: String, fontSize: CGFloat, color: UIColor) -> NSAttributedString? {
-        guard let uiFont = UIFont(name: font, size: fontSize) else {
-            print("⚠️ [WARNING] لا يمكن العثور على الخط '\(font)', استخدام الخط الافتراضي")
-            let systemFont = UIFont.systemFont(ofSize: fontSize)
-            return NSAttributedString(string: text, attributes: [
-                .font: systemFont,
-                .foregroundColor: color
-            ])
-        }
-        
-        return NSAttributedString(string: text, attributes: [
-            .font: uiFont,
-            .foregroundColor: color
-        ])
-    }
-    
     // دالة مساعدة لمطابقة أسماء الحقول مع البيانات
     private func getValueForField(fieldName: String, formData: FormFieldsModel) -> String {
         
         // مطابقة أسماء الحقول الفعلية في القالب مع البيانات - المطابقة المحدثة
         switch fieldName {
         // البيانات الأساسية - المطابقة المحدثة
-        case "doc_0_doc_0_Text_1": // day - اليوم
+        case "Text_1": // day - اليوم
             return formData.day
-        case "doc_0_doc_0_Text_2": // reportTime - الساعة  
+        case "Text_2": // reportTime - الساعة  
             return formData.time
-        case "doc_0_doc_0_Text_3": // location - الموقع 
+        case "Text_3": // location - الموقع 
             return formData.location
-        case "doc_0_doc_0_Text_4": // subscriptionNumber - رقم الاشتراك
+        case "Text_4": // subscriptionNumber - رقم الاشتراك
             return formData.subscriptionNumber
-        case "doc_0_doc_0_Text_6": // date - التاريخ
+        case "Text_6": // date - التاريخ
             return formData.date
-        case "doc_0_doc_0_Text_7": // meterCapacity - سعة العداد
+        case "Text_7": // meterCapacity - سعة العداد
             return formData.meterCapacity
-        case "doc_0_doc_0_Text_8": // currentLoad - الحمل الحالي
+        case "Text_8": // currentLoad - الحمل الحالي
             return formData.currentLoad
-        case "doc_0_doc_0_Text_11": // outageDetails - تفاصيل الانقطاع
+        case "Text_11": // outageDetails - تفاصيل الانقطاع
             return formData.additionalVerificationDetails
             
-        // مراحل الإعادة - المطابقة المحدثة
-        // المرحلة الأولى
-        case "doc_0_doc_0_Text_12": // restorationStage_1_phaseNumber
-            return formData.restorationPhases.count > 0 ? formData.restorationPhases[0].phaseNumber : ""
-        case "doc_0_doc_0_Text_15": // restorationStage_1_Duration
-            return formData.restorationPhases.count > 0 ? formData.restorationPhases[0].outageeDuration : ""
-        case "doc_0_doc_0_Text_24": // restorationStage_1_affectedCount
-            return formData.restorationPhases.count > 0 ? formData.restorationPhases[0].affectedCount : ""
-        case "doc_0_doc_0_Text_22": // restorationStage_1_restorationMethod
-            return formData.restorationPhases.count > 0 ? formData.restorationPhases[0].restorationMethod : ""
-            
-        // المرحلة الثانية
-        case "doc_0_doc_0_Text_13": // restorationStage_2_phaseNumber
-            return formData.restorationPhases.count > 1 ? formData.restorationPhases[1].phaseNumber : ""
-        case "doc_0_doc_0_Text_16": // restorationStage_2_Duration
-            return formData.restorationPhases.count > 1 ? formData.restorationPhases[1].outageeDuration : ""
-        case "doc_0_doc_0_Text_23": // restorationStage_2_affectedCount
-            return formData.restorationPhases.count > 1 ? formData.restorationPhases[1].affectedCount : ""
-        case "doc_0_doc_0_Text_21": // restorationStage_2_restorationMethod
-            return formData.restorationPhases.count > 1 ? formData.restorationPhases[1].restorationMethod : ""
-            
-        // المرحلة الثالثة
-        case "doc_0_doc_0_Text_14": // restorationStage_3_phaseNumber
-            return formData.restorationPhases.count > 2 ? formData.restorationPhases[2].phaseNumber : ""
-        case "doc_0_doc_0_Text_17": // restorationStage_3_Duration
-            return formData.restorationPhases.count > 2 ? formData.restorationPhases[2].outageeDuration : ""
-        case "doc_0_doc_0_Text_19": // restorationStage_3_affectedCount
-            return formData.restorationPhases.count > 2 ? formData.restorationPhases[2].affectedCount : ""
-        case "doc_0_doc_0_Text_20": // restorationStage_3_restorationMethod
-            return formData.restorationPhases.count > 2 ? formData.restorationPhases[2].restorationMethod : ""
-            
-        // التوصيات - المطابقة المحدثة
-        // التوصية الأولى
-        case "doc_0_doc_0_Text_27": // recommendationText_1
-            return formData.recommendations.count > 0 ? formData.recommendations[0].recommendationText : ""
-        case "doc_0_doc_0_Text_38": // responsibleEntity_1
-            return formData.recommendations.count > 0 ? formData.recommendations[0].responsibleParty : ""
-        case "doc_0_doc_0_Text_34": // targetDate1
-            return formData.recommendations.count > 0 ? formData.recommendations[0].targetDate : ""
-            
-        // التوصية الثانية
-        case "doc_0_doc_0_Text_28": // recommendationText_2
-            return formData.recommendations.count > 1 ? formData.recommendations[1].recommendationText : ""
-        case "doc_0_doc_0_Text_37": // responsibleEntity_2
-            return formData.recommendations.count > 1 ? formData.recommendations[1].responsibleParty : ""
-        case "doc_0_doc_0_Text_33": // targetDate2
-            return formData.recommendations.count > 1 ? formData.recommendations[1].targetDate : ""
-            
-        // التوصية الثالثة
-        case "doc_0_doc_0_Text_29": // recommendationText_3
-            return formData.recommendations.count > 2 ? formData.recommendations[2].recommendationText : ""
-        case "doc_0_doc_0_Text_30": // responsibleEntity_3
-            return formData.recommendations.count > 2 ? formData.recommendations[2].responsibleParty : ""
-        case "doc_0_doc_0_Text_32": // targetDate3
-            return formData.recommendations.count > 2 ? formData.recommendations[2].targetDate : ""
+        // التوصيات - حقل نص واحد فقط
+        case "Text_27": // التوصيات
+            return formData.recommendations
             
         // التواقيع - المطابقة المحدثة
         // التوقيع الأول
-        case "doc_0_doc_0_Text_58": // recommenderSignature_1
+        case "Text_58": // recommenderSignature_1
             return formData.signatures.count > 0 ? formData.signatures[0].representative : ""
-        case "doc_0_doc_0_Text_44": // recommenderEntity_1
+        case "Text_44": // recommenderEntity_1
             return formData.signatures.count > 0 ? formData.signatures[0].organization : ""
             
         // التوقيع الثاني
-        case "doc_0_doc_0_Text_39": // recommenderSignature_2
+        case "Text_39": // recommenderSignature_2
             return formData.signatures.count > 1 ? formData.signatures[1].representative : ""
-        case "doc_0_doc_0_Text_43": // recommenderEntity_2
+        case "Text_43": // recommenderEntity_2
             return formData.signatures.count > 1 ? formData.signatures[1].organization : ""
             
         // التوقيع الثالث
-        case "doc_0_doc_0_Text_40": // recommenderSignature_3
+        case "Text_40": // recommenderSignature_3
             return formData.signatures.count > 2 ? formData.signatures[2].representative : ""
-        case "doc_0_doc_0_Text_42": // recommenderEntity_3
+        case "Text_42": // recommenderEntity_3
             return formData.signatures.count > 2 ? formData.signatures[2].organization : ""
             
         // التوقيع الرابع
-        case "doc_0_doc_0_Text_51": // recommenderSignature_4
+        case "Text_51": // recommenderSignature_4
             return formData.signatures.count > 3 ? formData.signatures[3].representative : ""
-        case "doc_0_doc_0_Text_47": // recommenderEntity_4
+        case "Text_47": // recommenderEntity_4
             return formData.signatures.count > 3 ? formData.signatures[3].organization : ""
             
         // التوقيع الخامس
-        case "doc_0_doc_0_Text_52": // recommenderSignature_5
+        case "Text_52": // recommenderSignature_5
             return formData.signatures.count > 4 ? formData.signatures[4].representative : ""
-        case "doc_0_doc_0_Text_48": // recommenderEntity_5
+        case "Text_48": // recommenderEntity_5
             return formData.signatures.count > 4 ? formData.signatures[4].organization : ""
             
 
         // صناديق الاختيار (Checkboxes) - نفس المطابقة السابقة
-        case "doc_0_doc_0_Checkbox_1": // sourceCompanyKadana - بلاغ من شركة كدانة
+        case "Checkbox_1": // sourceCompanyKadana - بلاغ من شركة كدانة
             return formData.reportFromKadana ? "Yes" : ""
-        case "doc_0_doc_0_Checkbox_2": // sourceLicensedOperator - بلاغ من المرخص له
+        case "Checkbox_2": // sourceLicensedOperator - بلاغ من المرخص له
             return formData.reportFromLicensee ? "Yes" : ""
-        case "doc_0_doc_0_Checkbox_3": // sourceEnergyCenter - بلاغ وارد لمركز منظومة الطاقة
+        case "Checkbox_3": // sourceEnergyCenter - بلاغ وارد لمركز منظومة الطاقة
             return formData.reportFromEnergySystemCenter ? "Yes" : ""
-        case "doc_0_doc_0_Checkbox_4": // sourceCampOperatorCompany - بلاغ من الشركة المشغلة لمخيمات
+        case "Checkbox_4": // sourceCampOperatorCompany - بلاغ من الشركة المشغلة لمخيمات
             return formData.reportFromOperatingCompany ? "Yes" : ""
-        case "doc_0_doc_0_Checkbox_5": // sourceFieldVisit - انقطاع خلال زيارة ميدانية
+        case "Checkbox_5": // sourceFieldVisit - انقطاع خلال زيارة ميدانية
             return formData.outageFieldVisit ? "Yes" : ""
-        case "doc_0_doc_0_Checkbox_6": // sourceControlCenter - رصد في مركز التحكم الخاص بالمرخص له
+        case "Checkbox_6": // sourceControlCenter - رصد في مركز التحكم الخاص بالمرخص له
             return formData.detectedInControlCenter ? "Yes" : ""
-        case "doc_0_doc_0_Checkbox_7": // sourceMina - مشعر منى
+        case "Checkbox_7": // sourceMina - مشعر منى
             return formData.reportFromOther ? "Yes" : ""
             
         default:
@@ -794,7 +706,7 @@ class PDFManager: ObservableObject {
     
     // دالة لفحص القالب واستخراج أسماء الحقول
     func inspectPDFTemplate() {
-        guard let templatePath = Bundle.main.path(forResource: "template_with_placeholders", ofType: "pdf"),
+        guard let templatePath = Bundle.main.path(forResource: "template_with_placeholder", ofType: "pdf"),
               let templatePDF = PDFDocument(url: URL(fileURLWithPath: templatePath)) else {
             print("❌ [ERROR] لا يمكن تحميل ملف القالب")
             return

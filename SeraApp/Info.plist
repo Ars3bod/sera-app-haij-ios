@@ -35,9 +35,17 @@
             </array>
         </dict>
     </dict>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
         <string>armv7</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>UISupportedInterfaceOrientations~ipad</key>
     <array>
@@ -45,6 +53,17 @@
         <string>UIInterfaceOrientationPortraitUpsideDown</string>
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UIAppFonts</key>
+    <array>
+        <string>Resources/Bahij_TheSansArabic-Plain.ttf</string>
+        <string>Resources/Bahij_TheSansArabic-Light.ttf</string>
+        <string>Resources/Bahij_TheSansArabic-ExtraLight.ttf</string>
+        <string>Resources/Bahij_TheSansArabic-SemiLight.ttf</string>
+        <string>Resources/Bahij_TheSansArabic-SemiBold.ttf</string>
+        <string>Resources/Bahij_TheSansArabic-Bold.ttf</string>
+        <string>Resources/Bahij_TheSansArabic-ExtraBold.ttf</string>
+        <string>Resources/Bahij_TheSansArabic-Black.ttf</string>
     </array>
     <key>NSCameraUsageDescription</key>
     <string>يستخدم هذا التطبيق الكاميرا لالتقاط الصور وإضافتها إلى ملفات PDF</string>
