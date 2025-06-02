@@ -1,0 +1,936 @@
+import SwiftUI
+
+struct FillableFormView: View {
+    @StateObject private var formData = FormFieldsModel()
+    @ObservedObject var pdfManager: PDFManager
+    @State private var showingImagePicker = false
+    @State private var showingSourceSelection = false
+    @State private var showingSuccess = false
+    @State private var selectedImage: UIImage?
+    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 25) {
+                // رأس النموذج
+                VStack(spacing: 15) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.orange)
+                    
+                    Text("محضر بلاغ انقطاع الخدمة الكهربائية")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.center)
+                    
+                    Text("يرجى ملء جميع الحقول المطلوبة بدقة")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.bottom, 10)
+                
+                // القسم الأول: محضر بلاغ انقطاع الخدمة الكهربائية عن
+                FormSectionView(title: "محضر بلاغ انقطاع الخدمة الكهربائية عن", icon: "doc.text.fill", color: .orange) {
+                    VStack(spacing: 15) {
+                        // اختيار اليوم
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("اليوم")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Picker("اختر اليوم", selection: $formData.selectedDay) {
+                                Text("اختر اليوم").tag("")
+                                ForEach(formData.daysOfWeek, id: \.self) { day in
+                                    Text(day).tag(day)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                        
+                        // اختيار الوقت (ساعة:دقيقة صباحاً/مساءً)
+                        TimePickerView(
+                            selectedHour: $formData.selectedHour,
+                            selectedMinute: $formData.selectedMinute,
+                            selectedPeriod: $formData.selectedPeriod,
+                            hours: formData.hours,
+                            minutes: formData.minutes,
+                            periods: formData.periods
+                        )
+                        
+                        // اختيار التاريخ الهجري
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("التاريخ (ذو الحجة 1446 هـ)")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Picker("اختر اليوم", selection: $formData.selectedHijriDay) {
+                                ForEach(formData.hijriDaysInMonth, id: \.self) { day in
+                                    Text("ذو الحجة \(day), 1446 هـ").tag(day)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                        
+                        FormFieldView(title: "الموقع", text: $formData.location, placeholder: "أدخل الموقع")
+                    }
+                }
+                
+                // القسم الثاني: بيانات الموقع/المواقع المتأثرة
+                FormSectionView(title: "بيانات الموقع/المواقع المتأثرة", icon: "location.fill", color: .blue) {
+                    VStack(spacing: 15) {
+                        FormFieldView(title: "رقم الاشتراك/الاشتراكات", text: $formData.subscriptionNumber, placeholder: "أدخل رقم الاشتراك")
+                        
+                        // سعة العداد (رقمي)
+                        NumericFieldView(title: "سعة العداد (أمبير)", value: $formData.meterCapacityValue, placeholder: "أدخل سعة العداد", unit: "أمبير")
+                        
+                        // الحمل الحالي (رقمي)
+                        NumericFieldView(title: "الحمل الحالي (أمبير)", value: $formData.currentLoadValue, placeholder: "أدخل الحمل الحالي", unit: "أمبير")
+                    }
+                }
+                
+                // القسم الثالث: مصدر البلاغ
+                FormSectionView(title: "مصدر البلاغ", icon: "phone.fill", color: .green) {
+                    VStack(spacing: 15) {
+                        CheckboxView(title: "بلاغ وارد لمركز منظومة الطاقة", isChecked: $formData.reportFromEnergySystemCenter)
+                        CheckboxView(title: "بلاغ من المرخص له", isChecked: $formData.reportFromLicensee)
+                        CheckboxView(title: "رصد في مركز التحكم الخاص بالمرخص له في مشعر منى", isChecked: $formData.detectedInControlCenter)
+                        CheckboxView(title: "انقطاع خلال زيارة ميدانية", isChecked: $formData.outageFieldVisit)
+                        CheckboxView(title: "بلاغ من شركة كدانة", isChecked: $formData.reportFromKadana)
+                        CheckboxView(title: "بلاغ من الشركة المشغلة لمخيمات الحجاج", isChecked: $formData.reportFromOperatingCompany)
+                        CheckboxView(title: "أخرى", isChecked: $formData.reportFromOther)
+                    }
+                }
+                
+                // القسم الرابع: مراحل إعادة الخدمة الكهربائية
+                FormSectionView(title: "مراحل إعادة الخدمة الكهربائية", icon: "arrow.clockwise.circle.fill", color: .cyan) {
+                    VStack(spacing: 15) {
+                        ForEach(formData.restorationPhases.indices, id: \.self) { index in
+                            RestorationPhaseView(
+                                phase: $formData.restorationPhases[index],
+                                index: index + 1,
+                                onDelete: {
+                                    formData.removeRestorationPhase(at: index)
+                                }
+                            )
+                        }
+                        
+                        if formData.restorationPhases.count < 3 {
+                            Button(action: {
+                                formData.addRestorationPhase()
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("إضافة مرحلة إعادة")
+                                }
+                                .foregroundColor(.cyan)
+                                .padding()
+                                .background(Color.cyan.opacity(0.1))
+                                .cornerRadius(10)
+                            }
+                        }
+                    }
+                }
+                
+                // القسم الخامس: تفاصيل إضافية للتحقق والانقطاع والإعادة
+                FormSectionView(title: "تفاصيل إضافية للتحقق والانقطاع والإعادة", icon: "doc.text.below.ecg", color: .indigo) {
+                    VStack(spacing: 15) {
+                        MultilineTextFieldView(title: "التفاصيل الإضافية", text: $formData.additionalVerificationDetails, placeholder: "أدخل أي تفاصيل إضافية")
+                    }
+                }
+                
+                // القسم السادس: التوصيات
+                FormSectionView(title: "التوصيات", icon: "lightbulb.fill", color: .yellow) {
+                    VStack(spacing: 15) {
+                        ForEach(formData.recommendations.indices, id: \.self) { index in
+                            RecommendationView(
+                                recommendation: $formData.recommendations[index],
+                                index: index + 1,
+                                onDelete: {
+                                    formData.removeRecommendation(at: index)
+                                }
+                            )
+                        }
+                        
+                        if formData.recommendations.count < 3 {
+                            Button(action: {
+                                formData.addRecommendation()
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("إضافة توصية")
+                                }
+                                .foregroundColor(.yellow)
+                                .padding()
+                                .background(Color.yellow.opacity(0.1))
+                                .cornerRadius(10)
+                            }
+                        }
+                    }
+                }
+                
+                // القسم السابع: التواقيع
+                FormSectionView(title: "التواقيع", icon: "signature", color: .red) {
+                    VStack(spacing: 15) {
+                        ForEach(formData.signatures.indices, id: \.self) { index in
+                            SignatureView(
+                                signature: $formData.signatures[index],
+                                index: index + 1,
+                                onDelete: {
+                                    formData.removeSignature(at: index)
+                                }
+                            )
+                        }
+                        
+                        if formData.signatures.count < 5 {
+                            Button(action: {
+                                formData.addSignature()
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("إضافة توقيع")
+                                }
+                                .foregroundColor(.red)
+                                .padding()
+                                .background(Color.red.opacity(0.1))
+                                .cornerRadius(10)
+                            }
+                        }
+                    }
+                }
+                
+                // القسم الثامن: المرفقات (الصور)
+                FormSectionView(title: "المرفقات (الصور)", icon: "photo.fill", color: .mint) {
+                    VStack(spacing: 15) {
+                        Text("يمكن إضافة حتى 8 صور كمرفقات")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                        
+                        if formData.selectedImages.isEmpty {
+                            Button(action: {
+                                showingSourceSelection = true
+                            }) {
+                                VStack(spacing: 12) {
+                                    Image(systemName: "photo.badge.plus")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(.mint)
+                                    
+                                    Text("أضف الصور")
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 100)
+                                .background(Color.mint.opacity(0.1))
+                                .cornerRadius(15)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .stroke(Color.mint, style: StrokeStyle(lineWidth: 2, dash: [8]))
+                                )
+                            }
+                        } else {
+                            VStack(spacing: 15) {
+                                HStack {
+                                    Text("الصور المرفقة (\(formData.selectedImages.count)/8)")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                }
+                                
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible()),
+                                    GridItem(.flexible())
+                                ], spacing: 15) {
+                                    ForEach(formData.selectedImages.indices, id: \.self) { index in
+                                        ImageThumbnailView(
+                                            image: formData.selectedImages[index],
+                                            onDelete: {
+                                                formData.removeImage(at: index)
+                                            }
+                                        )
+                                    }
+                                    
+                                    if formData.selectedImages.count < 8 {
+                                        AddImageButton(action: {
+                                            showingSourceSelection = true
+                                        })
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // زر إنشاء PDF
+                VStack(spacing: 15) {
+                    Button(action: {
+                        pdfManager.generateFilledPDF(with: formData) { url in
+                            if url != nil {
+                                showingSuccess = true
+                            }
+                        }
+                    }) {
+                        HStack {
+                            if pdfManager.isProcessing {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                                Text("جاري الإنشاء...")
+                                    .fontWeight(.semibold)
+                            } else {
+                                Image(systemName: "doc.fill")
+                                Text("إنشاء محضر PDF")
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 55)
+                        .background(
+                            LinearGradient(
+                                colors: [.orange, .orange.opacity(0.8)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(15)
+                        .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+                    .disabled(pdfManager.isProcessing)
+                    
+                    if let errorMessage = pdfManager.errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
+                
+                // القسم الثامن: إعدادات تخصيص الخط واللون
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack {
+                        Image(systemName: "textformat")
+                            .foregroundColor(.purple)
+                            .font(.title2)
+                        Text("إعدادات تخصيص الخط واللون")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                        Spacer()
+                    }
+                    
+                    VStack(spacing: 15) {
+                        // اختيار نوع الخط
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("نوع الخط")
+                                .font(.body)
+                                .fontWeight(.medium)
+                            
+                            Picker("اختر نوع الخط", selection: $formData.selectedFontFamily) {
+                                ForEach(formData.availableFonts, id: \.self) { font in
+                                    Text(font)
+                                        .tag(font)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        
+                        // اختيار حجم الخط
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("حجم الخط")
+                                .font(.body)
+                                .fontWeight(.medium)
+                            
+                            Picker("اختر حجم الخط", selection: $formData.selectedFontSize) {
+                                ForEach(formData.fontSizes, id: \.self) { size in
+                                    Text("\(Int(size)) نقطة")
+                                        .tag(size)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        
+                        // اختيار لون الخط
+                        FontColorPickerView(formData: formData)
+                        
+                        // معاينة الخط
+                        FontPreviewView(formData: formData)
+                    }
+                }
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color(UIColor.systemBackground))
+                        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                )
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 50)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+        }
+        .actionSheet(isPresented: $showingSourceSelection) {
+            ActionSheet(
+                title: Text("اختر مصدر الصورة"),
+                buttons: [
+                    .default(Text("الكاميرا")) {
+                        sourceType = .camera
+                        showingImagePicker = true
+                    },
+                    .default(Text("معرض الصور")) {
+                        sourceType = .photoLibrary
+                        showingImagePicker = true
+                    },
+                    .cancel(Text("إلغاء"))
+                ]
+            )
+        }
+        .sheet(isPresented: $showingImagePicker) {
+            ImagePicker(selectedImage: $selectedImage, sourceType: sourceType)
+        }
+        .onChange(of: selectedImage) { _, image in
+            if let image = image {
+                formData.addImage(image)
+                selectedImage = nil
+            }
+        }
+        .sheet(isPresented: $showingSuccess) {
+            if let pdfURL = pdfManager.generatedPDFURL {
+                PDFSuccessView(pdfURL: pdfURL, pdfManager: pdfManager)
+            }
+        }
+    }
+}
+
+struct CheckboxView: View {
+    let title: String
+    @Binding var isChecked: Bool
+    
+    var body: some View {
+        HStack {
+            Button(action: {
+                isChecked.toggle()
+            }) {
+                Image(systemName: isChecked ? "checkmark.square.fill" : "square")
+                    .font(.title2)
+                    .foregroundColor(isChecked ? .green : .gray)
+            }
+            
+            Text(title)
+                .font(.body)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.leading)
+            
+            Spacer()
+        }
+        .padding(.vertical, 5)
+    }
+}
+
+struct MultilineTextFieldView: View {
+    let title: String
+    @Binding var text: String
+    let placeholder: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            TextEditor(text: $text)
+                .frame(minHeight: 100)
+                .padding(8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+                .environment(\.layoutDirection, .rightToLeft)
+        }
+    }
+}
+
+// مكون لإدخال الأرقام
+struct NumericFieldView: View {
+    let title: String
+    @Binding var value: Double
+    let placeholder: String
+    let unit: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            HStack {
+                TextField(placeholder, value: $value, format: .number)
+                    .keyboardType(.decimalPad)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .multilineTextAlignment(.trailing)
+                
+                Text(unit)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 8)
+            }
+        }
+    }
+}
+
+// مكون لإدخال الأرقام الصحيحة
+struct IntegerFieldView: View {
+    let title: String
+    @Binding var value: Int
+    let placeholder: String
+    let unit: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            HStack {
+                TextField(placeholder, value: $value, format: .number)
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .multilineTextAlignment(.trailing)
+                
+                Text(unit)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 8)
+            }
+        }
+    }
+}
+
+// مكون لاختيار التاريخ الهجري
+struct HijriDatePickerView: View {
+    let title: String
+    @Binding var year: Int
+    @Binding var month: Int
+    @Binding var day: Int
+    
+    let startYear: Int = 1446
+    let endYear: Int = 1450
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            HStack(spacing: 10) {
+                // اختيار السنة
+                Picker("السنة", selection: $year) {
+                    ForEach(startYear...endYear, id: \.self) { year in
+                        Text("\(year) هـ").tag(year)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+                
+                // اختيار الشهر
+                Picker("الشهر", selection: $month) {
+                    ForEach(1...12, id: \.self) { month in
+                        Text(Recommendation.hijriMonths[month - 1]).tag(month)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+                
+                // اختيار اليوم
+                Picker("اليوم", selection: $day) {
+                    ForEach(1...30, id: \.self) { day in
+                        Text("\(day)").tag(day)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+            }
+        }
+    }
+}
+
+struct RestorationPhaseView: View {
+    @Binding var phase: RestorationPhase
+    let index: Int
+    let onDelete: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 15) {
+            HStack {
+                Text("مرحلة الاعادة \(index)")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+                Button(action: onDelete) {
+                    Image(systemName: "trash.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.red)
+                }
+            }
+            
+            VStack(spacing: 10) {
+                FormFieldView(title: "رقم المرحلة", text: $phase.phaseNumber, placeholder: "أدخل رقم المرحلة")
+                
+                // مدة الانقطاع (رقمي)
+                NumericFieldView(title: "مدة الانقطاع", value: $phase.outageDurationValue, placeholder: "أدخل مدة الانقطاع", unit: "دقيقة")
+                
+                // عدد المتأثرين (رقمي صحيح)
+                IntegerFieldView(title: "عدد المتأثرين", value: $phase.affectedCountValue, placeholder: "أدخل عدد المتأثرين", unit: "شخص")
+                
+                FormFieldView(title: "طريقة الإعادة", text: $phase.restorationMethod, placeholder: "أدخل طريقة الإعادة")
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.05))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+struct RecommendationView: View {
+    @Binding var recommendation: Recommendation
+    let index: Int
+    let onDelete: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 15) {
+            HStack {
+                Text("التوصية \(index)")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+                Button(action: onDelete) {
+                    Image(systemName: "trash.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.red)
+                }
+            }
+            
+            VStack(spacing: 10) {
+                MultilineTextFieldView(title: "نص التوصية", text: $recommendation.recommendationText, placeholder: "أدخل نص التوصية")
+                FormFieldView(title: "الجهة المسؤولة", text: $recommendation.responsibleParty, placeholder: "أدخل الجهة المسؤولة")
+                
+                // التاريخ المستهدف الهجري
+                HijriDatePickerView(
+                    title: "التاريخ المستهدف",
+                    year: $recommendation.targetHijriYear,
+                    month: $recommendation.targetHijriMonth,
+                    day: $recommendation.targetHijriDay
+                )
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.05))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+struct SignatureView: View {
+    @Binding var signature: Signature
+    let index: Int
+    let onDelete: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 15) {
+            HStack {
+                Text("التوقيع \(index)")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+                Button(action: onDelete) {
+                    Image(systemName: "trash.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.red)
+                }
+            }
+            
+            VStack(spacing: 10) {
+                FormFieldView(title: "الجهة", text: $signature.organization, placeholder: "أدخل اسم الجهة")
+                FormFieldView(title: "ممثل الجهة", text: $signature.representative, placeholder: "أدخل اسم ممثل الجهة")
+            }
+        }
+        .padding()
+        .background(Color.brown.opacity(0.05))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.brown.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+struct FormSectionView<Content: View>: View {
+    let title: String
+    let icon: String
+    let color: Color
+    @ViewBuilder let content: Content
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.title2)
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            
+            content
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(color.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+struct FormFieldView: View {
+    let title: String
+    @Binding var text: String
+    let placeholder: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            TextField(placeholder, text: $text)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .environment(\.layoutDirection, .rightToLeft)
+        }
+    }
+}
+
+struct TimePickerView: View {
+    @Binding var selectedHour: Int
+    @Binding var selectedMinute: Int
+    @Binding var selectedPeriod: String
+    let hours: [Int]
+    let minutes: [Int]
+    let periods: [String]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("الوقت")
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            VStack(spacing: 12) {
+                // صف التسميات
+                HStack {
+                    Spacer()
+                    
+                    Text("الساعة")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 80)
+                    
+                    Spacer()
+                        .frame(width: 20)
+                    
+                    Text("الدقيقة")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 80)
+                    
+                    Text("الفترة")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 100)
+                    
+                    Spacer()
+                }
+                
+                // صف المنتقيات
+                HStack(spacing: 10) {
+                    Spacer()
+                    
+                    // اختيار الساعة (1-12)
+                    Picker("الساعة", selection: $selectedHour) {
+                        ForEach(hours, id: \.self) { hour in
+                            Text("\(hour) س").tag(hour)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 80)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                    
+                    Text(":")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    // اختيار الدقيقة (0-59)
+                    Picker("الدقيقة", selection: $selectedMinute) {
+                        ForEach(minutes, id: \.self) { minute in
+                            Text("\(String(format: "%02d", minute)) د").tag(minute)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 80)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                    
+                    // اختيار الفترة (صباحاً/مساءً)
+                    Picker("الفترة", selection: $selectedPeriod) {
+                        ForEach(periods, id: \.self) { period in
+                            Text(period).tag(period)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 100)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                    
+                    Spacer()
+                }
+                
+                // عرض الوقت المحدد
+                HStack {
+                    Spacer()
+                    
+                    Text("الوقت المحدد:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text("\(selectedHour):\(String(format: "%02d", selectedMinute)) \(selectedPeriod)")
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                }
+                .padding(.top, 5)
+            }
+            .padding()
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(12)
+        }
+    }
+}
+
+struct FillableFormView_Previews: PreviewProvider {
+    static var previews: some View {
+        FillableFormView(pdfManager: PDFManager())
+    }
+}
+
+// مكونات مساعدة لتخصيص الخط
+struct FontColorPickerView: View {
+    @ObservedObject var formData: FormFieldsModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("لون الخط")
+                .font(.body)
+                .fontWeight(.medium)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 15) {
+                    ForEach(formData.commonColors, id: \.name) { colorOption in
+                        Button(action: {
+                            formData.selectedTextColor = colorOption.color
+                        }) {
+                            VStack(spacing: 5) {
+                                Circle()
+                                    .fill(Color(colorOption.color))
+                                    .frame(width: 30, height: 30)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(
+                                                formData.selectedTextColor == colorOption.color ? Color.blue : Color.clear,
+                                                lineWidth: 3
+                                            )
+                                    )
+                                
+                                Text(colorOption.name)
+                                    .font(.caption)
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 10)
+            }
+        }
+    }
+}
+
+struct FontPreviewView: View {
+    @ObservedObject var formData: FormFieldsModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("معاينة الخط")
+                .font(.body)
+                .fontWeight(.medium)
+            
+            Text("هذا نموذج للنص سيظهر بالخط واللون المحدد في ملف PDF")
+                .font(.custom(formData.selectedFontFamily, size: formData.selectedFontSize))
+                .foregroundColor(Color(formData.selectedTextColor))
+                .padding(15)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(10)
+                .environment(\.layoutDirection, .rightToLeft)
+        }
+    }
+} 
